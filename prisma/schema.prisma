@@ -18,8 +18,9 @@ model User {
   email String @unique
   hash  String
 
-  firstName String?
-  lastName  String?
+  firstName   String?
+  lastName    String?
+  profile_pic String?
 
   sites     Site[]
   passwords Password[]

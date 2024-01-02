@@ -29,6 +29,7 @@ import {UserService} from './user.service';
 import {UserDto} from './dto/';
 import {
   DELETE_FAILED,
+  FILE_NOT_FOUND,
   NOT_AUTHORIZED,
   UPDATE_FAILED,
 } from 'src/constants/error';
@@ -36,6 +37,8 @@ import {DELETE_SUCCESS, UPDATE_SUCCESS} from 'src/constants/en';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {diskStorage} from 'multer';
 import {extname} from 'path';
+import * as Cloudinary from 'cloudinary';
+import {ConfigService} from '@nestjs/config';
 
 export const storage = diskStorage({
   destination: './uploads',
@@ -53,7 +56,16 @@ function generateFilename(file: Express.Multer.File) {
 @ApiTags('User')
 @ApiBearerAuth()
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    config: ConfigService,
+  ) {
+    Cloudinary.v2.config({
+      cloud_name: config.get('CLOUD_NAME'),
+      api_key: config.get('API_KEY'),
+      api_secret: config.get('API_SECRET'),
+    });
+  }
 
   // Get user details
   @Get()
@@ -63,7 +75,6 @@ export class UserController {
   }
 
   // Update user details
-
   @HttpCode(HttpStatus.OK)
   @Put(':id')
   async updateUser(
@@ -77,6 +88,7 @@ export class UserController {
     return UPDATE_SUCCESS;
   }
 
+  // Upload profile picture
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -95,8 +107,19 @@ export class UserController {
       storage,
     }),
   )
-  async upload(@UploadedFile() file: Express.Multer.File) {
-    console.log(file);
+  async upload(
+    @UploadedFile() file: Express.Multer.File,
+    @GetUser() user: User,
+  ) {
+    if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
+    const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
+      folder: 'Profile',
+    });
+    this.userService.updateUser(user.id, {
+      email: user.email,
+      profile_pic: UPLOAD.secure_url,
+    });
+    return UPLOAD.secure_url;
   }
 
   // Delete user

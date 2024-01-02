@@ -15,4 +15,8 @@ export class UserDto implements UserCreateInputWithoutHash {
   @ApiProperty()
   @Allow()
   email: string;
+
+  @ApiProperty()
+  @Allow()
+  profile_pic: string;
 }
