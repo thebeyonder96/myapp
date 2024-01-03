@@ -37,8 +37,11 @@ import {DELETE_SUCCESS, UPDATE_SUCCESS} from 'src/constants/en';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {diskStorage} from 'multer';
 import {extname} from 'path';
+import * as path from 'path';
 import * as Cloudinary from 'cloudinary';
 import {ConfigService} from '@nestjs/config';
+import * as admin from 'firebase-admin';
+import * as uuid from 'uuid';
 
 export const storage = diskStorage({
   destination: './uploads',
@@ -120,6 +123,53 @@ export class UserController {
       profile_pic: UPLOAD.secure_url,
     });
     return UPLOAD.secure_url;
+  }
+
+  // Upload profile picture
+  @Post('/pic')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage,
+    }),
+  )
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @GetUser() user: User,
+  ) {
+    if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
+    const SERVICE_ACCOUNT = path.join(
+      __dirname,
+      '../../firebase-adminsdk-o7zp1-29aaba19d4.json',
+    );
+    admin.initializeApp({
+      credential: admin.credential.cert(SERVICE_ACCOUNT),
+      storageBucket: 'gs://in-hout.appspot.com',
+    });
+    const BUCKET = admin.storage().bucket();
+    const UPLOAD = await BUCKET.upload(file.path, {
+      metadata: {
+        firebaseStorageDownloadTokens: uuid.v4(),
+      },
+    });
+    const [url] = await UPLOAD[0].getSignedUrl({
+      action: 'read',
+      expires: '03-09-2024', // Set the expiration date for the signed URL (optional)
+    });
+
+    console.log(`Download link : ${url}`);
+    console.log(UPLOAD);
   }
 
   // Delete user
