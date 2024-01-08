@@ -165,11 +165,10 @@ export class UserController {
     });
     const [url] = await UPLOAD[0].getSignedUrl({
       action: 'read',
-      expires: '03-09-2024', // Set the expiration date for the signed URL (optional)
+      expires: '03-09-2030', // Set the expiration date for the signed URL (optional)
     });
 
-    console.log(`Download link : ${url}`);
-    console.log(UPLOAD);
+    return url;
   }
 
   // Delete user

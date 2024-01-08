@@ -6,3 +6,5 @@ export const UPDATE_FAILED = 'Unable to update';
 export const DELETE_FAILED = 'Unable to delete';
 export const NOT_AUTHORIZED = `You don't have the permission to do this task`;
 export const FILE_NOT_FOUND = 'File not found';
+export const SITE_ALREADY_EXIST = 'Site with this name already exist';
+export const SITE_NOT_FOUND = 'Site not found!';

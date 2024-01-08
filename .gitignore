@@ -35,3 +35,4 @@ lerna-debug.log*
 !.vscode/extensions.json
 .env
 uploads/
+firebase-adminsdk-o7zp1-29aaba19d4.json
