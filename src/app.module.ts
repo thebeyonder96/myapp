@@ -6,7 +6,9 @@ import {UserModule} from './user/user.module';
 import {PasswordsModule} from './passwords/passwords.module';
 import {PrismaModule} from './prisma/prisma.module';
 import {ConfigModule} from '@nestjs/config';
-import { SiteModule } from './site/site.module';
+import {SiteModule} from './site/site.module';
+import {APP_FILTER} from '@nestjs/core';
+import {HttpExceptionFilter} from './config/error.filter';
 
 @Module({
   imports: [
@@ -20,6 +22,12 @@ import { SiteModule } from './site/site.module';
     SiteModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
