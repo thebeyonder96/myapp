@@ -50,7 +50,7 @@ export const storage = diskStorage({
   },
 });
 
-function generateFilename(file: Express.Multer.File) {
+export function generateFilename(file: Express.Multer.File) {
   return `${Date.now()}${extname(file.originalname)}`;
 }
 

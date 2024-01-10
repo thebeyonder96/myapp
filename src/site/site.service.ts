@@ -79,4 +79,22 @@ export class SiteService {
       console.log(error);
     }
   }
+
+  async siteImage(url: string, siteId: string) {
+    const EXIST = await this.prisma.site.findUnique({
+      where: {
+        id: siteId,
+      },
+    });
+    if (!EXIST) throw new HttpException(SITE_NOT_FOUND, HttpStatus.NOT_FOUND);
+    const UPLOAD = await this.prisma.site.update({
+      where: {
+        id: siteId,
+      },
+      data: {
+        image: url,
+      },
+    });
+    return UPLOAD;
+  }
 }

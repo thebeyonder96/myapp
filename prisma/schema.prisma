@@ -55,8 +55,8 @@ model Password {
   updated_at DateTime @updatedAt
   deleted    Boolean  @default(false)
 
-  url          String
-  title        String?
+  username     String?
+  email        String?
   password     String
   descriptions String?
 

@@ -9,17 +9,30 @@ import {
   Param,
   Post,
   Put,
+  UploadedFile,
   UseFilters,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import {ApiBearerAuth, ApiParam, ApiResponse, ApiTags} from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {SiteService} from './site.service';
 import {SiteDto} from './dto/site.dto';
 import {GetUser} from 'src/auth/decorator';
 import {User} from '@prisma/client';
 import {JwtGuard} from 'src/auth/guard';
-import {log} from 'util';
 import {HttpExceptionFilter} from 'src/config/error.filter';
+import * as Cloudinary from 'cloudinary';
+import {ConfigService} from '@nestjs/config';
+import {FileInterceptor} from '@nestjs/platform-express';
+import {storage} from 'src/user/user.controller';
+import {FILE_NOT_FOUND} from 'src/constants/error';
 
 @UseGuards(JwtGuard)
 @Controller('site')
@@ -27,7 +40,16 @@ import {HttpExceptionFilter} from 'src/config/error.filter';
 @ApiBearerAuth()
 @UseFilters(new HttpExceptionFilter())
 export class SiteController {
-  constructor(private siteService: SiteService) {}
+  constructor(
+    private siteService: SiteService,
+    config: ConfigService,
+  ) {
+    Cloudinary.v2.config({
+      cloud_name: config.get('CLOUD_NAME'),
+      api_key: config.get('API_KEY'),
+      api_secret: config.get('API_SECRET'),
+    });
+  }
 
   @Post()
   @ApiResponse({status: HttpStatus.CREATED})
@@ -76,5 +98,32 @@ export class SiteController {
     } catch (error) {
       throw new HttpException(error, HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Post('/image/:siteId')
+  @ApiParam({name: 'siteId'})
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file', {storage: storage}))
+  async siteImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('siteId') siteId: string,
+  ) {
+    if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
+    const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
+      folder: 'Site',
+    });
+    const UPDATED = await this.siteService.siteImage(UPLOAD.secure_url, siteId);
+    return UPDATED;
   }
 }
