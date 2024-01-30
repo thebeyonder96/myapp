@@ -29,5 +29,6 @@ import {HttpExceptionFilter} from './config/error.filter';
       useClass: HttpExceptionFilter,
     },
   ],
+  exports: [],
 })
 export class AppModule {}

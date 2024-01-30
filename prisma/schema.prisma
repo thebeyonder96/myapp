@@ -30,8 +30,7 @@ model User {
 
   role UserRole @default(USER)
 
-  sites     Site[]
-  passwords Password[]
+  sites Site[]
 }
 
 model Site {
@@ -40,26 +39,27 @@ model Site {
   updated_At DateTime @updatedAt
   deleted    Boolean  @default(false)
 
-  name        String  @unique
+  name        String     @unique
   url         String
   description String?
   image       String?
+  passwords   Password[]
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
 }
 
 model Password {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(uuid())
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   deleted    Boolean  @default(false)
 
-  username     String?
-  email        String?
-  password     String
-  descriptions String?
+  username    String?
+  email       String?
+  password    String
+  description String?
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id])
 }
