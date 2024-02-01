@@ -39,6 +39,7 @@ export class AuthService {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') throw new ForbiddenException(EMAIL_EXISTS);
       }
+      throw error;
     }
   }
 

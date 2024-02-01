@@ -17,6 +17,10 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: AuthDto) {
-    return await this.authService.register(dto);
+    try {
+      return await this.authService.register(dto);
+    } catch (error) {
+      throw error;
+    }
   }
 }
