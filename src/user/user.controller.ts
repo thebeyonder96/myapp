@@ -44,13 +44,6 @@ import * as admin from 'firebase-admin';
 import * as uuid from 'uuid';
 import {ImageUpload} from 'src/site/site.controller';
 
-// export const storage = diskStorage({
-//   destination: './uploads',
-//   filename(req, file, callback) {
-//     callback(null, generateFilename(file));
-//   },
-// });
-
 export function generateFilename(file: Express.Multer.File) {
   return `${Date.now()}${extname(file.originalname)}`;
 }
@@ -116,9 +109,6 @@ export class UserController {
     @GetUser() user: User,
   ) {
     if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
-    // const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
-    //   folder: 'Profile',
-    // });
     const UPLOAD = new Promise((resolve, reject) => {
       Cloudinary.v2.uploader
         .upload_stream({resource_type: 'image'}, onDone)
@@ -138,52 +128,6 @@ export class UserController {
     });
     return IMAGE.result.secure_url;
   }
-
-  // Upload profile picture
-  // @Post('/pic')
-  // @ApiConsumes('multipart/form-data')
-  // @ApiBody({
-  //   schema: {
-  //     type: 'object',
-  //     properties: {
-  //       file: {
-  //         type: 'string',
-  //         format: 'binary',
-  //       },
-  //     },
-  //   },
-  // })
-  // @UseInterceptors(
-  //   FileInterceptor('file', {
-  //     storage: memoryStorage(),
-  //   }),
-  // )
-  // async uploadImage(
-  //   @UploadedFile() file: Express.Multer.File,
-  //   @GetUser() user: User,
-  // ) {
-  //   if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
-  //   const SERVICE_ACCOUNT = path.join(
-  //     __dirname,
-  //     '../../firebase-adminsdk-o7zp1-29aaba19d4.json',
-  //   );
-  //   admin.initializeApp({
-  //     credential: admin.credential.cert(SERVICE_ACCOUNT),
-  //     storageBucket: 'gs://in-hout.appspot.com',
-  //   });
-  //   const BUCKET = admin.storage().bucket();
-  //   const UPLOAD = await BUCKET.upload(file.path, {
-  //     metadata: {
-  //       firebaseStorageDownloadTokens: uuid.v4(),
-  //     },
-  //   });
-  //   const [url] = await UPLOAD[0].getSignedUrl({
-  //     action: 'read',
-  //     expires: '03-09-2030', // Set the expiration date for the signed URL (optional)
-  //   });
-
-  //   return url;
-  // }
 
   // Delete user
   @HttpCode(HttpStatus.OK)

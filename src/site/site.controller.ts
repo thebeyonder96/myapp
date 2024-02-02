@@ -162,10 +162,6 @@ export class SiteController {
         }
       });
       const IMAGE = (await UPLOAD) as ImageUpload;
-
-      // const UPLOADs = await Cloudinary.v2.uploader.upload(fileBuffer, {
-      //   folder: 'Site',
-      // });
       const UPDATED = await this.siteService.siteImage(
         IMAGE.result.secure_url,
         siteId,
