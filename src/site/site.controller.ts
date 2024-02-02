@@ -33,7 +33,34 @@ import {ConfigService} from '@nestjs/config';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {FILE_NOT_FOUND} from 'src/constants/error';
 import {memoryStorage} from 'multer';
-import {ImageUpload} from 'src/config/interfaces';
+
+export interface ImageUpload {
+  success: boolean;
+  result: CloudinaryUploadResult;
+}
+
+export interface CloudinaryUploadResult {
+  asset_id: string;
+  public_id: string;
+  version: number;
+  version_id: string;
+  signature: string;
+  width: number;
+  height: number;
+  format: string;
+  resource_type: string;
+  created_at: string;
+  tags: string[];
+  bytes: number;
+  type: string;
+  etag: string;
+  placeholder: boolean;
+  url: string;
+  secure_url: string;
+  folder: string;
+  original_filename: string;
+  api_key: string;
+}
 
 @UseGuards(JwtGuard)
 @Controller('site')

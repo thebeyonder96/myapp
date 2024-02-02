@@ -42,7 +42,7 @@ import * as Cloudinary from 'cloudinary';
 import {ConfigService} from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import * as uuid from 'uuid';
-import {ImageUpload} from 'src/config/interfaces';
+import {ImageUpload} from 'src/site/site.controller';
 
 // export const storage = diskStorage({
 //   destination: './uploads',
