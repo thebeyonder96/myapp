@@ -35,13 +35,10 @@ import {
 } from 'src/constants/error';
 import {DELETE_SUCCESS, UPDATE_SUCCESS} from 'src/constants/en';
 import {FileInterceptor} from '@nestjs/platform-express';
-import {diskStorage, memoryStorage} from 'multer';
+import {memoryStorage} from 'multer';
 import {extname} from 'path';
-import * as path from 'path';
 import * as Cloudinary from 'cloudinary';
 import {ConfigService} from '@nestjs/config';
-import * as admin from 'firebase-admin';
-import * as uuid from 'uuid';
 import {ImageUpload} from 'src/site/site.controller';
 
 export function generateFilename(file: Express.Multer.File) {
