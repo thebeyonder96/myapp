@@ -31,8 +31,9 @@ import {HttpExceptionFilter} from 'src/config/error.filter';
 import * as Cloudinary from 'cloudinary';
 import {ConfigService} from '@nestjs/config';
 import {FileInterceptor} from '@nestjs/platform-express';
-import {storage} from 'src/user/user.controller';
 import {FILE_NOT_FOUND} from 'src/constants/error';
+import {memoryStorage} from 'multer';
+import {ImageUpload} from 'src/config/interfaces';
 
 @UseGuards(JwtGuard)
 @Controller('site')
@@ -114,16 +115,37 @@ export class SiteController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file', {storage: storage}))
+  @UseInterceptors(FileInterceptor('file', {storage: memoryStorage()}))
   async siteImage(
     @UploadedFile() file: Express.Multer.File,
     @Param('siteId') siteId: string,
   ) {
-    if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
-    const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
-      folder: 'Site',
-    });
-    const UPDATED = await this.siteService.siteImage(UPLOAD.secure_url, siteId);
-    return UPDATED;
+    try {
+      if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
+      const UPLOAD = new Promise((resolve, reject) => {
+        Cloudinary.v2.uploader
+          .upload_stream({resource_type: 'image'}, onDone)
+          .end(file.buffer);
+
+        function onDone(error, result) {
+          if (error) {
+            return reject({success: false, error});
+          }
+          return resolve({success: true, result});
+        }
+      });
+      const IMAGE = (await UPLOAD) as ImageUpload;
+
+      // const UPLOADs = await Cloudinary.v2.uploader.upload(fileBuffer, {
+      //   folder: 'Site',
+      // });
+      const UPDATED = await this.siteService.siteImage(
+        IMAGE.result.secure_url,
+        siteId,
+      );
+      return UPDATED;
+    } catch (error) {
+      throw error;
+    }
   }
 }

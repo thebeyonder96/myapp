@@ -35,20 +35,21 @@ import {
 } from 'src/constants/error';
 import {DELETE_SUCCESS, UPDATE_SUCCESS} from 'src/constants/en';
 import {FileInterceptor} from '@nestjs/platform-express';
-import {diskStorage} from 'multer';
+import {diskStorage, memoryStorage} from 'multer';
 import {extname} from 'path';
 import * as path from 'path';
 import * as Cloudinary from 'cloudinary';
 import {ConfigService} from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import * as uuid from 'uuid';
+import {ImageUpload} from 'src/config/interfaces';
 
-export const storage = diskStorage({
-  destination: './uploads',
-  filename(req, file, callback) {
-    callback(null, generateFilename(file));
-  },
-});
+// export const storage = diskStorage({
+//   destination: './uploads',
+//   filename(req, file, callback) {
+//     callback(null, generateFilename(file));
+//   },
+// });
 
 export function generateFilename(file: Express.Multer.File) {
   return `${Date.now()}${extname(file.originalname)}`;
@@ -107,7 +108,7 @@ export class UserController {
   })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage,
+      storage: memoryStorage(),
     }),
   )
   async upload(
@@ -115,61 +116,74 @@ export class UserController {
     @GetUser() user: User,
   ) {
     if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
-    const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
-      folder: 'Profile',
+    // const UPLOAD = await Cloudinary.v2.uploader.upload(file.path, {
+    //   folder: 'Profile',
+    // });
+    const UPLOAD = new Promise((resolve, reject) => {
+      Cloudinary.v2.uploader
+        .upload_stream({resource_type: 'image'}, onDone)
+        .end(file.buffer);
+
+      function onDone(error, result) {
+        if (error) {
+          return reject({success: false, error});
+        }
+        return resolve({success: true, result});
+      }
     });
+    const IMAGE = (await UPLOAD) as ImageUpload;
     this.userService.updateUser(user.id, {
       email: user.email,
-      profile_pic: UPLOAD.secure_url,
+      profile_pic: IMAGE.result.secure_url,
     });
-    return UPLOAD.secure_url;
+    return IMAGE.result.secure_url;
   }
 
   // Upload profile picture
-  @Post('/pic')
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage,
-    }),
-  )
-  async uploadImage(
-    @UploadedFile() file: Express.Multer.File,
-    @GetUser() user: User,
-  ) {
-    if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
-    const SERVICE_ACCOUNT = path.join(
-      __dirname,
-      '../../firebase-adminsdk-o7zp1-29aaba19d4.json',
-    );
-    admin.initializeApp({
-      credential: admin.credential.cert(SERVICE_ACCOUNT),
-      storageBucket: 'gs://in-hout.appspot.com',
-    });
-    const BUCKET = admin.storage().bucket();
-    const UPLOAD = await BUCKET.upload(file.path, {
-      metadata: {
-        firebaseStorageDownloadTokens: uuid.v4(),
-      },
-    });
-    const [url] = await UPLOAD[0].getSignedUrl({
-      action: 'read',
-      expires: '03-09-2030', // Set the expiration date for the signed URL (optional)
-    });
+  // @Post('/pic')
+  // @ApiConsumes('multipart/form-data')
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       file: {
+  //         type: 'string',
+  //         format: 'binary',
+  //       },
+  //     },
+  //   },
+  // })
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //     storage: memoryStorage(),
+  //   }),
+  // )
+  // async uploadImage(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @GetUser() user: User,
+  // ) {
+  //   if (!file) throw new ForbiddenException(FILE_NOT_FOUND);
+  //   const SERVICE_ACCOUNT = path.join(
+  //     __dirname,
+  //     '../../firebase-adminsdk-o7zp1-29aaba19d4.json',
+  //   );
+  //   admin.initializeApp({
+  //     credential: admin.credential.cert(SERVICE_ACCOUNT),
+  //     storageBucket: 'gs://in-hout.appspot.com',
+  //   });
+  //   const BUCKET = admin.storage().bucket();
+  //   const UPLOAD = await BUCKET.upload(file.path, {
+  //     metadata: {
+  //       firebaseStorageDownloadTokens: uuid.v4(),
+  //     },
+  //   });
+  //   const [url] = await UPLOAD[0].getSignedUrl({
+  //     action: 'read',
+  //     expires: '03-09-2030', // Set the expiration date for the signed URL (optional)
+  //   });
 
-    return url;
-  }
+  //   return url;
+  // }
 
   // Delete user
   @HttpCode(HttpStatus.OK)
