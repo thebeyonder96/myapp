@@ -12,7 +12,11 @@ export class AuthController {
   @Post('login')
   @ApiResponse({status: 200})
   async login(@Body() dto: AuthDto) {
-    return await this.authService.login(dto);
+    try {
+      return await this.authService.login(dto);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Post('register')

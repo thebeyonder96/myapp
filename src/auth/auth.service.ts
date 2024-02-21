@@ -1,4 +1,4 @@
-import {ForbiddenException, Injectable} from '@nestjs/common';
+import {ForbiddenException, HttpException, Injectable} from '@nestjs/common';
 import {PrismaService} from 'src/prisma/prisma.service';
 import {hash, verify} from 'argon2';
 import {AuthDto} from './dto';
@@ -26,6 +26,7 @@ export class AuthService {
       const EXIST = await this.prisma.user.findUnique({
         where: {email: dto.email},
       });
+      if (EXIST) throw new HttpException(EMAIL_EXISTS, 403);
       const USER = await this.prisma.user.create({
         data: {
           email: dto.email,
@@ -35,25 +36,29 @@ export class AuthService {
       delete USER.hash;
       return REGISTER_SUCCESS;
     } catch (error) {
-      console.log(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') throw new ForbiddenException(EMAIL_EXISTS);
-      }
+      // console.log(error);
+      // if (error instanceof PrismaClientKnownRequestError) {
+      //   if (error.code === 'P2002') throw new ForbiddenException(EMAIL_EXISTS);
+      // }
       throw error;
     }
   }
 
   async login(dto: AuthDto) {
-    const USER = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email,
-      },
-    });
-    if (!USER) throw new ForbiddenException(EMAIL_NOT_EXISTS);
-    const VERIFY_PASS = await verify(USER.hash, dto.password);
-    if (!VERIFY_PASS) throw new ForbiddenException(WRONG_PASSWORD);
-    const TOKEN = await this.generateToken(USER);
-    return {LOGIN_SUCCESS, TOKEN};
+    try {
+      const USER = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
+      if (!USER) throw new ForbiddenException(EMAIL_NOT_EXISTS);
+      const VERIFY_PASS = await verify(USER.hash, dto.password);
+      if (!VERIFY_PASS) throw new ForbiddenException(WRONG_PASSWORD);
+      const TOKEN = await this.generateToken(USER);
+      return {LOGIN_SUCCESS, TOKEN};
+    } catch (error) {
+      throw error;
+    }
   }
 
   async generateToken(dto: User) {
