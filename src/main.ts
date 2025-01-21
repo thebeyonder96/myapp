@@ -20,7 +20,11 @@ async function bootstrap() {
       whitelist: true, //Don't accept additional properties to the dto,automatically removed.
     }),
   ); //To use validation pipe in Auth dto
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(3000);
 }
